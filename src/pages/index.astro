@@ -1,0 +1,79 @@
+---
+import Base from '../layouts/Base.astro';
+import { phases, phaseHours, phaseWeeks, totalHours, totalWeeks, allLessons, allUnits, weekRange, policyLabel, HOURS_PER_WEEK } from '../data/curriculum';
+import { url } from '../lib/url';
+
+const levels: Record<string, number> = { none: 0, explain: 1, assistant: 2, supervised: 3, partner: 4 };
+---
+<Base title="CS2030" active="home">
+  <p class="eyebrow">Self-study curriculum</p>
+  <h1>Software engineering in the age of agents</h1>
+  <p class="lead">
+    When agents write most of the code, an engineer is still responsible for three things:
+    understanding, design and verification. CS2030 builds those, in that order, before handing more of the typing to agents.
+  </p>
+
+  <div class="stats">
+    <div class="stat"><b>{totalHours}</b><span>hours of study</span></div>
+    <div class="stat"><b>{totalWeeks}</b><span>weeks at {HOURS_PER_WEEK} h / week</span></div>
+    <div class="stat"><b>{phases.length}</b><span>phases</span></div>
+    <div class="stat"><b>{allUnits.length}</b><span>units</span></div>
+    <div class="stat"><b>{allLessons.length}</b><span>lessons</span></div>
+    <div class="stat"><b data-stat="pct">0%</b><span>your progress</span></div>
+  </div>
+
+  <h2>Roadmap</h2>
+  <div class="roadmap">
+    {phases.map((p) => {
+      const [a, b] = weekRange(p);
+      return (
+        <a class="phase-row" href={url(`phases/${p.id}`)} style={`--phase: var(--p${p.id})`}>
+          <div class="phase-num">{p.id}</div>
+          <div>
+            <h3>{p.title}</h3>
+            <div class="muted small">{p.tagline}</div>
+            <div class="small" style="margin-top:6px"><span class="pill" style="background:color-mix(in srgb, var(--phase) 14%, transparent); color: var(--phase)">{policyLabel[p.agentPolicy]}</span> <span class="muted">{p.units.length} units · {p.units.reduce((s, u) => s + u.lessons.length, 0)} lessons</span></div>
+          </div>
+          <div class="phase-meta">
+            {phaseHours(p)} h · {phaseWeeks(p)} wk<br />weeks {a}–{b}
+            <div class="bar" data-bar={p.id}><i></i></div>
+          </div>
+        </a>
+      );
+    })}
+  </div>
+
+  <h2>How agent use grows</h2>
+  <p class="muted">Delegation is earned. The first two phases build intuition by hand; agents take on more work only once you can judge their output.</p>
+  <div class="agent-scale">
+    {phases.map((p) => (
+      <div style={`--phase: var(--p${p.id})`}>
+        <b>Phase {p.id}</b>
+        <div class="lvl">{[1, 2, 3, 4].map((n) => <i class={n <= levels[p.agentPolicy] ? 'on' : ''}></i>)}</div>
+        {policyLabel[p.agentPolicy]}
+      </div>
+    ))}
+  </div>
+
+  <h2>Principles</h2>
+  <div class="grid grid-3">
+    <div class="card"><h3 style="margin-top:0">Foundations before delegation</h3><p class="muted small">Phases 1 and 2 are done without agents writing code. You cannot review what you could never have written.</p></div>
+    <div class="card"><h3 style="margin-top:0">Delegation in stages</h3><p class="muted small">Agents are tutors, then assistants, then supervised implementers, then full partners in phases 5 and 6.</p></div>
+    <div class="card"><h3 style="margin-top:0">Defend every line</h3><p class="muted small">Every phase ends with an <a href={url('defense')}>oral defense</a>. Code you cannot explain does not count.</p></div>
+  </div>
+
+  <h2>Assessment</h2>
+  <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th>Component</th><th class="num">Weight</th><th>What is measured</th></tr></thead>
+      <tbody>
+        <tr><td>Capstone product</td><td class="num">35%</td><td>A working product with specs, tests and monitoring</td></tr>
+        <tr><td>Unit projects</td><td class="num">25%</td><td>26 projects, one at the end of each unit</td></tr>
+        <tr><td>Oral defenses</td><td class="num">20%</td><td>One per phase: explain your code and decisions</td></tr>
+        <tr><td>Tool-free exams</td><td class="num">15%</td><td>No language models, mainly for phases 1 and 2</td></tr>
+        <tr><td>Open-source contribution</td><td class="num">5%</td><td>An accepted pull request in a real project</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">Rule for moving on: do not start the next phase before passing the current phase's oral defense.</p>
+</Base>

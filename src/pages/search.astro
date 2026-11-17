@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/url';
+---
+<Base title="Search" active="search">
+  <h1>Search</h1>
+  <p class="lead">Search every lesson by topic, book or keyword.</p>
+  <link href={`${url()}pagefind/pagefind-ui.css`} rel="stylesheet" />
+  <div id="search" style="margin-top:24px"></div>
+  <script is:inline define:vars={{ base: url() }}>
+    const s = document.createElement('script');
+    s.src = base + 'pagefind/pagefind-ui.js';
+    s.onload = () => new PagefindUI({ element: '#search', showSubResults: true, showImages: false });
+    s.onerror = () => { document.getElementById('search').textContent = 'Search index is built during deployment and is not available in development.'; };
+    document.head.appendChild(s);
+  </script>
+</Base>

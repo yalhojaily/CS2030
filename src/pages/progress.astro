@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+import { phases, phaseHours, totalHours, HOURS_PER_WEEK, allLessons, slug } from '../data/curriculum';
+import { url } from '../lib/url';
+const titles = Object.fromEntries(allLessons.map((l) => [l.id, { t: l.title, h: l.hours, href: url(`lessons/${slug(l.id)}`) }]));
+---
+<Base title="Progress" active="progress">
+  <p class="eyebrow">Your study</p>
+  <h1>Progress</h1>
+  <p class="lead">Completion is saved in this browser only. Export a backup regularly, and import it on another device to continue there.</p>
+
+  <div class="stats">
+    <div class="stat"><b data-stat="hours">0</b><span>of {totalHours} hours done</span></div>
+    <div class="stat"><b data-stat="lessons">0</b><span>of {allLessons.length} lessons</span></div>
+    <div class="stat"><b data-pace>–</b><span>hours / week (last 4 weeks)</span></div>
+    <div class="stat"><b data-finish>–</b><span>projected finish</span></div>
+  </div>
+  <div class="bar" data-bar="all" style="height:12px"><i></i></div>
+
+  <h2>By phase</h2>
+  <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th>Phase</th><th class="num">Done</th><th class="num">Total</th><th style="width:40%">Progress</th></tr></thead>
+      <tbody>
+        {phases.map((p) => (
+          <tr style={`--phase: var(--p${p.id})`}>
+            <td><a href={url(`phases/${p.id}`)}>{p.id}. {p.title}</a></td>
+            <td class="num"><span data-stat={`hours:${p.id}`}>0</span> h</td>
+            <td class="num">{phaseHours(p)} h</td>
+            <td style="vertical-align:middle"><div class="bar" data-bar={p.id}><i></i></div></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Hours per week</h2>
+  <p class="muted small">Lesson hours credited on the day you mark a lesson complete, last 12 weeks. The dashed line is the planned pace of {HOURS_PER_WEEK} h.</p>
+  <div class="card"><div id="weekly" role="img" aria-label="Bar chart of study hours per week"></div></div>
+  <details style="margin-top:8px"><summary class="small muted">Show as table</summary><div id="weekly-table"></div></details>
+
+  <h2>Recently completed</h2>
+  <div id="recent" class="muted">Nothing completed yet. Open the <a href={url('phases/1')}>first phase</a> to begin.</div>
+
+  <h2>Backup</h2>
+  <div style="display:flex; gap:10px; flex-wrap:wrap">
+    <button class="btn" data-export>Export progress (JSON)</button>
+    <label class="btn">Import progress<input type="file" accept="application/json" data-import hidden /></label>
+    <button class="btn" data-reset>Reset</button>
+  </div>
+
+  <script type="application/json" id="lesson-titles" set:html={JSON.stringify(titles)} />
+  <script define:vars={{ PACE: HOURS_PER_WEEK, TOTAL: totalHours }}>
+    const titles = JSON.parse(document.getElementById('lesson-titles').textContent);
+    const DAY = 864e5;
+    const weekStart = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    function draw({ store, meta }) {
+      const hours = Object.fromEntries(meta.map((m) => [m.id, m.h]));
+      const now = weekStart(new Date());
+      const weeks = Array.from({ length: 12 }, (_, i) => ({ start: new Date(now.getTime() - (11 - i) * 7 * DAY), h: 0 }));
+      let done = 0;
+      for (const [id, iso] of Object.entries(store.done)) {
+        done += hours[id] || 0;
+        const ws = weekStart(new Date(iso)).getTime();
+        const w = weeks.find((x) => x.start.getTime() === ws);
+        if (w) w.h += hours[id] || 0;
+      }
+      const last4 = weeks.slice(-4).reduce((s, w) => s + w.h, 0) / 4;
+      document.querySelector('[data-pace]').textContent = last4 ? last4.toFixed(1) : '–';
+      const remaining = TOTAL - done;
+      const finishEl = document.querySelector('[data-finish]');
+      if (remaining <= 0) finishEl.textContent = 'Done';
+      else if (last4 > 0) {
+        const d = new Date(Date.now() + (remaining / last4) * 7 * DAY);
+        finishEl.textContent = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+      } else finishEl.textContent = '–';
+
+      // Chart
+      const W = 720, H = 220, pl = 34, pr = 10, pt = 12, pb = 28;
+      const max = Math.max(PACE * 1.4, ...weeks.map((w) => w.h));
+      const y = (v) => pt + (H - pt - pb) * (1 - v / max);
+      const bw = (W - pl - pr) / weeks.length;
+      const ticks = [0, Math.round(max / 2), Math.round(max)];
+      const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;font-family:var(--sans);font-size:11px">`;
+      for (const t of ticks) svg += `<line x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end" fill="var(--muted)">${t}</text>`;
+      weeks.forEach((w, i) => {
+        const x = pl + i * bw + 3, bh = H - pb - y(w.h);
+        const tip = `Week of ${fmt(w.start)}: ${w.h} h`;
+        svg += `<g><title>${tip}</title><rect x="${pl + i * bw}" y="${pt}" width="${bw}" height="${H - pt - pb}" fill="transparent"/>`;
+        if (w.h > 0) svg += `<path d="M${x},${H - pb} v${-(bh - 4)} q0,-4 4,-4 h${bw - 14} q4,0 4,4 v${bh - 4} z" fill="var(--accent)"/>`;
+        svg += `</g>`;
+        if (i % 2 === 1) svg += `<text x="${pl + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle" fill="var(--muted)">${fmt(w.start)}</text>`;
+      });
+      svg += `<line x1="${pl}" x2="${W - pr}" y1="${y(PACE)}" y2="${y(PACE)}" stroke="var(--muted)" stroke-dasharray="4 4"/><text x="${W - pr}" y="${y(PACE) - 4}" text-anchor="end" fill="var(--muted)">plan ${PACE} h</text>`;
+      svg += `</svg>`;
+      document.getElementById('weekly').innerHTML = svg;
+      document.getElementById('weekly-table').innerHTML = `<table class="table small"><thead><tr><th>Week of</th><th class="num">Hours</th></tr></thead><tbody>${weeks.map((w) => `<tr><td>${fmt(w.start)}</td><td class="num">${w.h}</td></tr>`).join('')}</tbody></table>`;
+
+      const recent = Object.entries(store.done).sort((a, b) => b[1].localeCompare(a[1])).slice(0, 8);
+      if (recent.length) {
+        document.getElementById('recent').innerHTML = `<table class="table"><tbody>${recent.map(([id, iso]) => {
+          const t = titles[id]; if (!t) return '';
+          return `<tr><td class="id">${esc(id)}</td><td><a href="${t.href}">${esc(t.t)}</a></td><td class="num">${t.h} h</td><td class="num muted">${new Date(iso).toLocaleDateString('en-GB')}</td></tr>`;
+        }).join('')}</tbody></table>`;
+      }
+    }
+    document.addEventListener('cs-progress', (e) => draw(e.detail));
+  </script>
+</Base>

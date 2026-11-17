@@ -1,0 +1,65 @@
+---
+import Base from '../../layouts/Base.astro';
+import { allUnits, unitHours, slug } from '../../data/curriculum';
+import { bookById } from '../../data/books';
+import { url } from '../../lib/url';
+
+export function getStaticPaths() {
+  return allUnits.map(({ unit, phase }) => ({ params: { slug: slug(unit.id) }, props: { unit, phase } }));
+}
+const { unit, phase } = Astro.props;
+const idx = allUnits.findIndex((x) => x.unit.id === unit.id);
+const prev = allUnits[idx - 1];
+const next = allUnits[idx + 1];
+const sources = [...new Set(unit.lessons.flatMap((l) => l.reading.map((r) => r.book)))].map((id) => bookById.get(id)!);
+const readingMin = unit.lessons.reduce((s, l) => s + l.reading.reduce((t, r) => t + r.minutes, 0), 0);
+---
+<Base title={`Unit ${unit.id}: ${unit.title}`} phaseColor={`--p${phase.id}`}>
+  <div class="crumbs"><a href={url()}>Roadmap</a><span><a href={url(`phases/${phase.id}`)}>Phase {phase.id}</a></span><span>Unit {unit.id}</span></div>
+  <div class="phase-header">
+    <p class="eyebrow">Unit {unit.id} · {phase.title}</p>
+    <h1>{unit.title}</h1>
+    <p class="lead">{unit.summary}</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>{unitHours(unit)}</b><span>hours</span></div>
+    <div class="stat"><b>{(unitHours(unit) / 15).toFixed(1)}</b><span>weeks at 15 h</span></div>
+    <div class="stat"><b>{Math.round(readingMin / 60)}</b><span>hours of reading</span></div>
+    <div class="stat"><b data-stat={`pct:${unit.id}`}>0%</b><span>completed</span></div>
+  </div>
+
+  <h2>Lessons</h2>
+  <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th></th><th>#</th><th>Lesson</th><th class="num">Hours</th></tr></thead>
+      <tbody>
+        {unit.lessons.map((l) => (
+          <tr data-lesson-row={l.id}>
+            <td style="width:1%"><input type="checkbox" class="check" data-lesson-check={l.id} aria-label={`Mark ${l.id} complete`} /></td>
+            <td class="id">{l.id}</td>
+            <td><a href={url(`lessons/${slug(l.id)}`)}>{l.title}</a> {l.project && <span class="pill project">Project</span>}</td>
+            <td class="num">{l.hours}</td>
+          </tr>
+        ))}
+        <tr><td></td><td></td><td><b>Unit total</b></td><td class="num"><b>{unitHours(unit)}</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Sources for this unit</h2>
+  <div class="grid grid-2">
+    {sources.map((b) => (
+      <div class="card">
+        <div><b>{b.url ? <a href={b.url} target="_blank" rel="noopener">{b.title}</a> : b.title}</b></div>
+        <div class="muted small">{b.authors}</div>
+        <div style="margin-top:8px"><span class={`pill ${b.free ? 'free' : 'paid'}`}>{b.free ? 'Free' : 'Paid'}</span></div>
+      </div>
+    ))}
+  </div>
+
+  <div class="pager">
+    {prev && <a href={url(`units/${slug(prev.unit.id)}`)}><small>← Unit {prev.unit.id}</small>{prev.unit.title}</a>}
+    {next && <a class="next" href={url(`units/${slug(next.unit.id)}`)}><small>Unit {next.unit.id} →</small>{next.unit.title}</a>}
+  </div>
+</Base>

@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import { allLessons, slug } from '../data/curriculum';
+import { books } from '../data/books';
+import { url } from '../lib/url';
+
+const rows = books
+  .map((b) => {
+    const uses = allLessons.flatMap((l) => l.reading.filter((r) => r.book === b.id).map((r) => ({ l, r })));
+    return { b, uses, minutes: uses.reduce((s, x) => s + x.r.minutes, 0) };
+  })
+  .filter((x) => x.uses.length > 0);
+const total = rows.reduce((s, x) => s + x.minutes, 0);
+const free = rows.filter((x) => x.b.free).length;
+const kinds: Record<string, string> = { book: 'Book', course: 'Course', docs: 'Docs', article: 'Article', tool: 'Tool', video: 'Video' };
+---
+<Base title="Reading list" active="reading">
+  <p class="eyebrow">All sources</p>
+  <h1>Reading list</h1>
+  <p class="lead">Every reading assignment in the curriculum, grouped by source. The site lists chapters and sections to read; it does not reproduce the books.</p>
+  <div class="stats">
+    <div class="stat"><b>{rows.length}</b><span>sources</span></div>
+    <div class="stat"><b>{free}</b><span>free to read</span></div>
+    <div class="stat"><b>{Math.round(total / 60)}</b><span>hours of assigned reading</span></div>
+  </div>
+  <div class="grid" style="gap:14px">
+    {rows.map(({ b, uses, minutes }) => (
+      <details class="card">
+        <summary style="cursor:pointer; list-style:none">
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <div>
+              <b>{b.title}</b>
+              <div class="muted small">{b.authors}</div>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap">
+              <span class="pill paid">{kinds[b.kind]}</span>
+              <span class={`pill ${b.free ? 'free' : 'paid'}`}>{b.free ? 'Free' : 'Paid'}</span>
+              <span class="pill">{uses.length} lessons · {Math.round(minutes / 6) / 10} h</span>
+            </div>
+          </div>
+        </summary>
+        {b.url && <p class="small"><a href={b.url} target="_blank" rel="noopener">{b.url}</a></p>}
+        <div class="table-scroll" style="margin-top:12px">
+          <table class="table">
+            <thead><tr><th>Lesson</th><th>Part</th><th class="num">Time</th></tr></thead>
+            <tbody>
+              {uses.map(({ l, r }) => (
+                <tr data-lesson-row={l.id}>
+                  <td><span class="mono muted">{l.id}</span> <a href={url(`lessons/${slug(l.id)}`)}>{l.title}</a></td>
+                  <td class="small">{r.part}</td>
+                  <td class="num">{r.minutes} min</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    ))}
+  </div>
+</Base>

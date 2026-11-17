@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+import { phases } from '../data/curriculum';
+
+const prompt = (p: (typeof phases)[number]) => `You are my oral examiner for Phase ${p.id} (${p.title}) of a self-study software engineering curriculum.
+
+I will share links to my projects for this phase. Ask me one question at a time, starting with the questions below, then follow up on anything I explain vaguely. Ask me to explain specific lines of my code. Do not give me the answers. At the end, list where I was weak and say whether I pass.
+
+Questions:
+${p.defense.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+---
+<Base title="Oral defense" active="defense">
+  <p class="eyebrow">End of each phase</p>
+  <h1>Oral defense</h1>
+  <p class="lead">Each phase ends with a spoken defense of your work. Use the questions with a mentor or peer, or paste the prompt into an AI model and let it examine you. Do not start the next phase until you pass.</p>
+
+  {phases.map((p) => (
+    <section id={`phase-${p.id}`} style={`--phase: var(--p${p.id}); margin-top: 36px`}>
+      <div class="phase-header"><p class="eyebrow">Phase {p.id}</p><h2 style="margin-top:0">{p.title}</h2></div>
+      <ol class="questions">{p.defense.map((q) => <li>{q}</li>)}</ol>
+      <h3>Examiner prompt</h3>
+      <div class="prompt"><div id={`prompt-${p.id}`}>{prompt(p)}</div><button class="btn" data-copy={`prompt-${p.id}`}>Copy</button></div>
+    </section>
+  ))}
+</Base>

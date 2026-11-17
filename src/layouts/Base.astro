@@ -1,0 +1,52 @@
+---
+import '../styles/global.css';
+import { allLessons, totalHours } from '../data/curriculum';
+import { url } from '../lib/url';
+
+interface Props { title: string; description?: string; phaseColor?: string; active?: string }
+const { title, description = 'CS2030: a self-study curriculum for software engineering in the age of coding agents.', phaseColor, active } = Astro.props;
+const meta = allLessons.map((l) => ({ id: l.id, h: l.hours, p: l.phase.id, u: l.unit.id }));
+const nav = [
+  ['Roadmap', '', 'home'],
+  ['Reading list', 'reading', 'reading'],
+  ['Progress', 'progress', 'progress'],
+  ['Oral defense', 'defense', 'defense'],
+  ['Search', 'search', 'search'],
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title === 'CS2030' ? 'CS2030: Software Engineering in the Age of Agents' : `${title} · CS2030`}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={`${url()}favicon.svg`} type="image/svg+xml" />
+  </head>
+  <body style={phaseColor ? `--phase: var(${phaseColor})` : undefined}>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href={url()}>CS<span>2030</span></a>
+        <nav class="nav">
+          {nav.map(([label, path, key]) => (
+            <a href={url(path)} aria-current={active === key ? 'page' : undefined}>{label}</a>
+          ))}
+        </nav>
+        <div class="nav-progress"><span data-stat="hours">0</span> / {totalHours} h</div>
+      </div>
+    </header>
+    <main>
+      <div class="wrap">
+        <slot />
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        CS2030 is an imagined curriculum for learning software engineering when agents write much of the code.
+        Progress and notes are saved only in this browser; export them from the <a href={url('progress')}>Progress</a> page.
+      </div>
+    </footer>
+    <script type="application/json" id="cs-data" set:html={JSON.stringify(meta)} />
+    <script>import '../scripts/progress.ts';</script>
+  </body>
+</html>

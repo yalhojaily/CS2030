@@ -1,0 +1,99 @@
+---
+import Base from '../../layouts/Base.astro';
+import { allLessons, policyLabel, slug } from '../../data/curriculum';
+import { bookById } from '../../data/books';
+import { url } from '../../lib/url';
+
+export function getStaticPaths() {
+  return allLessons.map((l, i) => ({
+    params: { slug: slug(l.id) },
+    props: { lesson: l, prev: allLessons[i - 1], next: allLessons[i + 1] },
+  }));
+}
+const { lesson, prev, next } = Astro.props;
+const { phase, unit } = lesson;
+const readingMin = lesson.reading.reduce((s, r) => s + r.minutes, 0);
+const fmt = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`);
+---
+<Base title={`${lesson.id} ${lesson.title}`} phaseColor={`--p${phase.id}`}>
+  <div class="crumbs">
+    <a href={url()}>Roadmap</a>
+    <span><a href={url(`phases/${phase.id}`)}>Phase {phase.id}</a></span>
+    <span><a href={url(`units/${slug(unit.id)}`)}>Unit {unit.id}</a></span>
+    <span>{lesson.id}</span>
+  </div>
+
+  <div class="lesson-layout">
+    <article data-pagefind-body>
+      <p class="eyebrow">Lesson {lesson.id} · {unit.title}</p>
+      <h1>{lesson.title} {lesson.project && <span class="pill project" style="vertical-align:middle" data-pagefind-ignore>Project</span>}</h1>
+      <p class="lead">{lesson.summary}</p>
+
+      <h2>Objectives</h2>
+      <ul class="objectives">{lesson.objectives.map((o) => <li>{o}</li>)}</ul>
+
+      {lesson.reading.length > 0 && (
+        <>
+          <h2>Reading assignment <span class="muted small">· {fmt(readingMin)}</span></h2>
+          <div class="reading">
+            {lesson.reading.map((r) => {
+              const b = bookById.get(r.book)!;
+              return (
+                <div class="reading-item">
+                  <div class="title">{b.url ? <a href={b.url} target="_blank" rel="noopener">{b.title}</a> : b.title}</div>
+                  <div class="muted small">{b.authors}</div>
+                  <div class="part" style="margin-top:6px">{r.part}</div>
+                  <div class="focus"><b>Focus:</b> {r.focus}</div>
+                  <div class="meta"><span class="pill">{fmt(r.minutes)}</span><span class={`pill ${b.free ? 'free' : 'paid'}`}>{b.free ? 'Free' : 'Paid'}</span></div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <h2>{lesson.project ? 'Defense questions' : 'After-reading questions'}</h2>
+      <p class="muted small">Answer in your own words before moving on. Your notes stay in this browser.</p>
+      <ol class="questions">
+        {lesson.questions.map((q, i) => (
+          <li>
+            {q}
+            <details>
+              <summary class="muted small">Write your answer</summary>
+              <textarea data-note={`${lesson.id}#${i}`} aria-label={`Answer to question ${i + 1}`}></textarea>
+            </details>
+          </li>
+        ))}
+      </ol>
+
+      <h2>{lesson.project ? 'Deliverables' : 'Practice'}</h2>
+      <div class="practice">{lesson.practice}</div>
+
+      <div class="pager" data-pagefind-ignore>
+        {prev && <a href={url(`lessons/${slug(prev.id)}`)}><small>← {prev.id}</small>{prev.title}</a>}
+        {next && <a class="next" href={url(`lessons/${slug(next.id)}`)}><small>{next.id} →</small>{next.title}</a>}
+      </div>
+    </article>
+
+    <aside class="lesson-side">
+      <div class="side-box">
+        <dl>
+          <dt>Time</dt><dd>{lesson.hours} h</dd>
+          <dt>Reading</dt><dd>{fmt(readingMin)}</dd>
+          <dt>Unit</dt><dd>{unit.id}</dd>
+          <dt>Phase</dt><dd>{phase.id}</dd>
+        </dl>
+      </div>
+      <div class="side-box">
+        <div class="eyebrow" style="color:var(--phase)">Agent rule</div>
+        <b>{policyLabel[phase.agentPolicy]}</b>
+        <div class="muted small" style="margin-top:4px">{phase.agentRule}</div>
+      </div>
+      <button class="btn primary block" data-toggle-lesson={lesson.id}>Mark lesson complete</button>
+      <div class="side-box">
+        <div class="small muted">Unit progress</div>
+        <div class="bar" data-bar={unit.id} style="margin-top:8px"><i></i></div>
+      </div>
+    </aside>
+  </div>
+</Base>
