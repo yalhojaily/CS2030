@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import { allUnits, unitHours, slug } from '../../data/curriculum';
 import { bookById } from '../../data/books';
 import { url } from '../../lib/url';
+const withNotes = new Set(Object.keys(import.meta.glob('../../content/lessons/*.md')).map((k) => k.split('/').pop()!.replace('.md', '')));
 
 export function getStaticPaths() {
   return allUnits.map(({ unit, phase }) => ({ params: { slug: slug(unit.id) }, props: { unit, phase } }));
@@ -38,7 +39,7 @@ const readingMin = unit.lessons.reduce((s, l) => s + l.reading.reduce((t, r) => 
           <tr data-lesson-row={l.id}>
             <td style="width:1%"><input type="checkbox" class="check" data-lesson-check={l.id} aria-label={`Mark ${l.id} complete`} /></td>
             <td class="id">{l.id}</td>
-            <td><a href={url(`lessons/${slug(l.id)}`)}>{l.title}</a> {l.project && <span class="pill project">Project</span>}</td>
+            <td><a href={url(`lessons/${slug(l.id)}`)}>{l.title}</a> {l.project && <span class="pill project">Project</span>} {withNotes.has(slug(l.id)) && <span class="pill free">Full notes</span>}</td>
             <td class="num">{l.hours}</td>
           </tr>
         ))}

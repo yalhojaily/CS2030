@@ -3,6 +3,10 @@ import Base from '../../layouts/Base.astro';
 import { allLessons, policyLabel, slug } from '../../data/curriculum';
 import { bookById } from '../../data/books';
 import { url } from '../../lib/url';
+import 'katex/dist/katex.min.css';
+
+type NotesModule = { Content: any; getHeadings: () => { depth: number; slug: string; text: string }[]; frontmatter: { notesMinutes?: number; plan?: string[] } };
+const notesFiles = import.meta.glob<NotesModule>('../../content/lessons/*.md', { eager: true });
 
 export function getStaticPaths() {
   return allLessons.map((l, i) => ({
@@ -13,6 +17,8 @@ export function getStaticPaths() {
 const { lesson, prev, next } = Astro.props;
 const { phase, unit } = lesson;
 const readingMin = lesson.reading.reduce((s, r) => s + r.minutes, 0);
+const notes = notesFiles[`../../content/lessons/${slug(lesson.id)}.md`];
+const headings = notes ? notes.getHeadings().filter((h) => h.depth === 2) : [];
 const fmt = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`);
 ---
 <Base title={`${lesson.id} ${lesson.title}`} phaseColor={`--p${phase.id}`}>
@@ -32,9 +38,16 @@ const fmt = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m %
       <h2>Objectives</h2>
       <ul class="objectives">{lesson.objectives.map((o) => <li>{o}</li>)}</ul>
 
+      {notes && (
+        <>
+          <h2 id="notes">Lesson notes</h2>
+          <div class="notes"><notes.Content /></div>
+        </>
+      )}
+
       {lesson.reading.length > 0 && (
         <>
-          <h2>Reading assignment <span class="muted small">· {fmt(readingMin)}</span></h2>
+          <h2 id="reading">{notes ? 'Reading assignment (from the reference books)' : 'Reading assignment'} <span class="muted small">· {fmt(readingMin)}</span></h2>
           <div class="reading">
             {lesson.reading.map((r) => {
               const b = bookById.get(r.book)!;
@@ -89,6 +102,13 @@ const fmt = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m %
         <b>{policyLabel[phase.agentPolicy]}</b>
         <div class="muted small" style="margin-top:4px">{phase.agentRule}</div>
       </div>
+      {headings.length > 0 && (
+        <nav class="side-box toc" aria-label="Lesson contents">
+          <div class="eyebrow">In this lesson</div>
+          <ol>{headings.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+          <ol start={headings.length + 1}><li><a href="#reading">Reading assignment</a></li></ol>
+        </nav>
+      )}
       <button class="btn primary block" data-toggle-lesson={lesson.id}>Mark lesson complete</button>
       <div class="side-box">
         <div class="small muted">Unit progress</div>
@@ -96,4 +116,5 @@ const fmt = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m %
       </div>
     </aside>
   </div>
+  <script>import '../../scripts/widgets.ts';</script>
 </Base>

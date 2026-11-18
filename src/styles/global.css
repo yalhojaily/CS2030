@@ -212,3 +212,58 @@ main { padding: 32px 0 80px; }
 
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
 .toast.show { opacity: 1; }
+
+/* ---------- Lesson notes ---------- */
+.notes { font-size: 1.02rem; }
+.notes h2 { margin-top: 2.6rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }
+.notes h2:first-child { border-top: 0; margin-top: 0.5rem; }
+.notes h3 { margin-top: 1.8rem; }
+.notes p, .notes li { max-width: 760px; }
+.notes table { border-collapse: collapse; margin: 1rem 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 0.95rem; }
+.notes th, .notes td { border-bottom: 1px solid var(--line); padding: 6px 12px; text-align: center; }
+.notes th { background: color-mix(in srgb, var(--line) 35%, var(--surface)); font-weight: 600; }
+.notes tr:last-child td { border-bottom: 0; }
+.notes blockquote { margin: 1rem 0; padding: 4px 16px; border-left: 3px solid var(--line); color: var(--muted); }
+.notes pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 0.88rem; }
+.notes code { background: color-mix(in srgb, var(--line) 45%, transparent); padding: 1px 5px; border-radius: 4px; }
+.notes pre code { background: none; padding: 0; }
+.notes .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+
+.box { border: 1px solid var(--line); border-left: 5px solid var(--box, var(--accent)); background: var(--surface); border-radius: 10px; padding: 2px 18px; margin: 1.2rem 0; }
+.box.def { --box: var(--p1); }
+.box.thm { --box: var(--p2); background: color-mix(in srgb, var(--p2) 5%, var(--surface)); }
+.box.ex { --box: var(--p3); }
+.box.warn { --box: var(--p4); background: color-mix(in srgb, var(--p4) 6%, var(--surface)); }
+.box.cs { --box: var(--p5); }
+.box.plan { --box: var(--muted); }
+.box .tag { display: inline-block; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--box); font-weight: 700; margin-top: 12px; }
+
+.exercise { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 18px 10px; margin: 0.9rem 0; }
+.exercise .tag { display: inline-block; font-family: var(--mono); font-size: 0.75rem; font-weight: 700; color: var(--phase); margin-top: 12px; }
+.exercise .lvl-tag { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-left: 8px; }
+.exercise details { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 6px; }
+.exercise summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.92rem; }
+
+.toc { font-size: 0.88rem; }
+.toc ol { padding-left: 1.1rem; margin: 6px 0 0; }
+.toc li { margin: 3px 0; }
+.toc a { color: var(--muted); }
+.toc a:hover { color: var(--accent); }
+
+/* ---------- Widgets ---------- */
+.widget { border: 1px solid color-mix(in srgb, var(--phase) 40%, var(--line)); background: color-mix(in srgb, var(--phase) 4%, var(--surface)); border-radius: 12px; padding: 16px 18px; margin: 1.4rem 0; }
+.widget .w-title { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--phase); font-weight: 700; margin-bottom: 8px; }
+.widget input[type=text], .widget textarea, .widget input[type=number] { width: 100%; font: inherit; font-family: var(--mono); font-size: 0.95rem; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.widget textarea { min-height: 90px; }
+.widget .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.widget .row > * { flex: 1 1 160px; }
+.widget .out { margin-top: 10px; font-size: 0.92rem; overflow-x: auto; }
+.widget .out table { border-collapse: collapse; font-family: var(--mono); font-size: 0.88rem; }
+.widget .out th, .widget .out td { border: 1px solid var(--line); padding: 3px 10px; text-align: center; }
+.widget .out td.t { color: var(--ok); font-weight: 700; }
+.widget .out td.f { color: var(--p4); }
+.widget .err { color: var(--p4); }
+.widget .ok { color: var(--ok); font-weight: 600; }
+.widget .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.widget .chips button { font-family: var(--mono); font-size: 0.8rem; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.widget .prop { display: inline-flex; gap: 6px; align-items: center; margin: 3px 12px 3px 0; font-family: var(--mono); font-size: 0.88rem; }
