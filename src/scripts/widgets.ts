@@ -2,7 +2,7 @@
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /* ---------------- Truth tables ---------------- */
-type Node = { t: 'var'; v: string } | { t: 'const'; v: boolean } | { t: 'not'; a: Node } | { t: 'bin'; op: string; a: Node; b: Node };
+type Expr = { t: 'var'; v: string } | { t: 'const'; v: boolean } | { t: 'not'; a: Expr } | { t: 'bin'; op: string; a: Expr; b: Expr };
 
 function tokenize(src: string): string[] {
   const s = src.replace(/<->|↔|<=>/g, ' IFF ').replace(/->|→|=>/g, ' IMP ').replace(/[∧&]+/g, ' AND ').replace(/[∨|]+/g, ' OR ')
@@ -11,13 +11,13 @@ function tokenize(src: string): string[] {
   return s.split(/\s+/).filter(Boolean);
 }
 
-function parse(src: string): Node {
+function parse(src: string): Expr {
   const tk = tokenize(src);
   let i = 0;
   const peek = () => tk[i];
   const eat = (x?: string) => { const t = tk[i++]; if (x && t !== x) throw new Error(`expected "${x}" but found "${t ?? 'end'}"`); return t; };
   const prec: Record<string, number> = { IFF: 1, IMP: 2, OR: 3, XOR: 3, AND: 4 };
-  function primary(): Node {
+  function primary(): Expr {
     const t = peek();
     if (t === undefined) throw new Error('unexpected end of formula');
     if (t === 'NOT') { eat(); return { t: 'not', a: primary() }; }
@@ -27,7 +27,7 @@ function parse(src: string): Node {
     if (/^[a-z]$/.test(t)) { eat(); return { t: 'var', v: t }; }
     throw new Error(`unexpected "${t}" (use single lowercase letters for variables)`);
   }
-  function expr(min: number): Node {
+  function expr(min: number): Expr {
     let left = primary();
     for (let op = peek(); op !== undefined && prec[op] !== undefined && prec[op] >= min; op = peek()) {
       eat();
@@ -42,7 +42,7 @@ function parse(src: string): Node {
   return n;
 }
 
-function evalNode(n: Node, env: Record<string, boolean>): boolean {
+function evalNode(n: Expr, env: Record<string, boolean>): boolean {
   switch (n.t) {
     case 'var': return env[n.v];
     case 'const': return n.v;
@@ -53,7 +53,7 @@ function evalNode(n: Node, env: Record<string, boolean>): boolean {
     }
   }
 }
-function vars(n: Node, acc = new Set<string>()): Set<string> {
+function vars(n: Expr, acc = new Set<string>()): Set<string> {
   if (n.t === 'var') acc.add(n.v);
   else if (n.t === 'not') vars(n.a, acc);
   else if (n.t === 'bin') { vars(n.a, acc); vars(n.b, acc); }
@@ -201,3 +201,4 @@ function graph(el: HTMLElement) {
 
 const registry: Record<string, (el: HTMLElement) => void> = { 'truth-table': truthTable, relation, birthday, graph };
 document.querySelectorAll<HTMLElement>('[data-widget]').forEach((el) => { el.classList.add('widget'); registry[el.dataset.widget!]?.(el); });
+export {};
